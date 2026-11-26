@@ -30,8 +30,8 @@ export const CY = MOBILE ? Math.round(196 + (PLAY_B - 196) * 0.52) : 370;
 export const LY = MOBILE ? {
   topFont: 26, topY: 96, ruleY: 118, ruleW: 300,
   chipFont: 16, chipSubFont: 13, chipH: 52,
-  comboX: W - 58, comboFont: 34, comboY: 26, comboSubY: 52, scoreY: 72,
-  meterX: CX - 110, meterY: 136, meterW: 220,
+  comboX: W - 54, comboFont: 30, comboY: 20, comboSubY: 44, scoreY: 64,
+  meterX: CX - 150, meterY: 132, meterW: 140,
   bossHpY: 158, hintY: 178, bossBodyY: 262, bossWordY: 346, bossHint: 14,
   labelMin: 196, labelPad: 60, bannerY: 330, bannerFont: 44, subY: 376, subFont: 18,
   upgX: 10, upgY: 190, inset: 70, introScale: 1.7,

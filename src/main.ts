@@ -23,7 +23,10 @@ const game = new Phaser.Game({
 // Phones: keep Phaser's idea of where the canvas is in sync with the real page, so taps land where they are drawn.
 // Safari's toolbars and the visual viewport can move the canvas without a normal resize event.
 const syncBounds = () => { try { game.scale.updateBounds(); } catch { /* ignore */ } };
-window.addEventListener('touchstart', syncBounds, { capture: true, passive: true });
+let lastTouchAt = -1e9;
+window.addEventListener('touchstart', () => { lastTouchAt = performance.now(); syncBounds(); }, { capture: true, passive: true });
+// Some mobile browsers send an extra mouse event after a tap. Swallow those before the game sees them.
+for (const t of ['mousedown', 'mouseup', 'click']) window.addEventListener(t, (e) => { if (performance.now() - lastTouchAt < 900) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
 window.addEventListener('mousedown', syncBounds, true);
 window.addEventListener('resize', () => { setTimeout(() => game.scale.refresh(), 60); });
 window.visualViewport?.addEventListener('resize', () => game.scale.refresh());

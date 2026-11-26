@@ -57,3 +57,5 @@ Opening the game on a phone or touch device switches to mobile mode automaticall
 - Easier speed tiers (20/28/36/45 WPM), shorter words and slower enemies.
 - Everything is tappable: title, notebook (tap an item, tap again to buy), settings, upgrade cards, pause button (top right).
 - Same art, music and content as desktop. Hold the phone upright.
+
+Troubleshooting touch input on a phone: open the game with `?debug=1` to show a small log of every key the on-screen keyboard receives and what the game did with it.

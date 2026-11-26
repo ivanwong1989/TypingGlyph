@@ -11,6 +11,7 @@ import { audio, music } from '../sfx';
 import { UPGRADES, Upgrade, drawCards } from '../upgrades';
 import type { RunSummary } from './summary';
 import { OnScreenKeyboard } from '../keyboard';
+import { DEBUG, debugLog } from '../debug';
 
 type Kind = 'drifter' | 'dasher' | 'splitter' | 'shielded' | 'child' | 'boss' | 'scrambler' | 'inker' | 'marker';
 interface Plan { kind: Kind; word: string; x: number; y: number; cost: number }
@@ -81,6 +82,7 @@ export class GameScene extends Phaser.Scene {
   private inset = 0;
   private previewTexts: Phaser.GameObjects.Text[] = [];
   private tHint!: Phaser.GameObjects.Text;
+  kb?: OnScreenKeyboard;
   private chip!: Phaser.GameObjects.Graphics;
 
   private mode: 'play' | 'clearing' | 'bossintro' | 'pick' | 'ending' = 'play';
@@ -183,7 +185,11 @@ export class GameScene extends Phaser.Scene {
 
     this.tTopDim = txt(this, CX, LY.topY, '', LY.topFont, '#a9a89f', 0, 0.5, FONT_C).setDepth(19);
     this.tTopInk = txt(this, CX, LY.topY, '', LY.topFont, CSS.red, 0, 0.5, FONT_C).setDepth(19);
-    this.tTopPct = txt(this, CX, LY.topY + 35, '', 12, CSS.grey, 0.5, 0.5, FONT_C).setDepth(19);
+    this.tTopPct = txt(this, MOBILE ? CX + LY.ruleW / 2 : CX, MOBILE ? LY.topY : LY.topY + 35, '', 12, CSS.grey, MOBILE ? 1 : 0.5, 0.5, FONT_C).setDepth(19);
+    if (MOBILE) { // tiny captions so the two meters explain themselves
+      txt(this, CX - 80, LY.meterY + 13, 'finale charge', 10, CSS.grey, 0.5, 0.5, FONT_C).setDepth(19);
+      txt(this, CX + 80, LY.meterY + 13, 'ink gauge', 10, CSS.grey, 0.5, 0.5, FONT_C).setDepth(19);
+    }
     this.chip = this.add.graphics().setDepth(31);
     this.tStage = txt(this, MOBILE ? 14 : 28, MOBILE ? 18 : 24, '', LY.chipFont, CSS.ink, 0, 0.5, FONT_C).setDepth(32);
     this.tInk = txt(this, MOBILE ? 14 : 28, MOBILE ? 38 : 50, '', LY.chipSubFont, CSS.red, 0, 0.5, FONT_C).setDepth(32);
@@ -194,7 +200,9 @@ export class GameScene extends Phaser.Scene {
     this.tToast = txt(this, CX, CY + 110, '', MOBILE ? 17 : 22, CSS.red).setDepth(20).setAlpha(0).setWordWrapWidth(W - 30).setAlign('center');
     this.tBanner = txt(this, CX, LY.bannerY, '', LY.bannerFont, CSS.ink, 0.5, 0.5, FONT_C).setDepth(22).setAlpha(0);
     this.tSub = txt(this, CX, LY.subY, '', LY.subFont, CSS.mid).setDepth(22).setAlpha(0).setWordWrapWidth(W - 40).setAlign('center');
-    this.tUpg = txt(this, LY.upgX, LY.upgY, '', MOBILE ? 12 : 14, CSS.grey, 0, 0, FONT_C).setDepth(20).setLineSpacing(4);
+    this.tUpg = MOBILE
+      ? txt(this, CX, PLAY_B - 40, '', 12, CSS.mid, 0.5, 0.5, FONT_C).setDepth(20).setAlign('center').setWordWrapWidth(W - 24)
+      : txt(this, LY.upgX, LY.upgY, '', 14, CSS.grey, 0, 0, FONT_C).setDepth(20).setLineSpacing(4);
 
     const slots = this.slotDefs();
     this.slotLabels = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY + LY.slotLabelDy, MOBILE ? '' : '!' + s.word, 11, CSS.grey, 0.5, 0.5, FONT_C).setDepth(20));
@@ -215,7 +223,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Phone controls: on-screen keyboard, tap-to-cast spell buttons, and a pause button. */
   private buildTouch() {
-    new OnScreenKeyboard(this, (k) => this.onKey({ key: k } as KeyboardEvent));
+    this.kb = new OnScreenKeyboard(this, (k) => this.onKey({ key: k } as KeyboardEvent));
     const slots = this.slotDefs();
     slots.forEach((sl, i) => {
       const z = this.add.zone(this.slotX(i, slots.length), LY.slotY, LY.slotSpacing, LY.slotSize + 14).setDepth(46).setInteractive();
@@ -299,7 +307,11 @@ export class GameScene extends Phaser.Scene {
     const views = this.enemies
       .filter((e) => e.x > -10 && e.x < W + 10 && e.y > -10 && e.y < H + 10)
       .map((e) => ({ id: e.id, word: e.word, distSq: (e.x - CX) ** 2 + (e.y - CY) ** 2 }));
-    for (const x of this.engine.key(k, views, this.time.now)) this.handle(x);
+    const lw0 = DEBUG ? this.enemies.find((x) => x.id === this.engine.lockedId) : undefined;
+    const exp0 = lw0 ? lw0.word[this.engine.progress] : '-';
+    const evs = this.engine.key(k, views, this.time.now);
+    if (DEBUG) debugLog('game got "' + k + '" expected "' + exp0 + '" (' + (lw0 ? lw0.word : 'no target') + ') -> ' + (evs.map((e) => e.t).join(',') || 'nothing'));
+    for (const x of evs) this.handle(x);
   }
 
   private handle(ev: TypingEvent) {
@@ -1141,20 +1153,20 @@ export class GameScene extends Phaser.Scene {
     this.chip.lineStyle(1, COL.light, 1).strokeRect(MOBILE ? 6 : 14, 8, cw, LY.chipH);
     this.tCombo.setText(this.combo ? 'x' + this.mult() : '').setColor(this.mult() >= 3 ? CSS.red : CSS.ink);
     this.tCombo.setScale(1 + (this.combo ? Math.max(0, 0.15 - ((t * 1000) % 1000) / 4000) : 0));
-    this.tComboSub.setText(this.combo ? `combo ${this.combo}` : '');
-    this.tScore.setText(`score ${this.score}`);
+    if (MOBILE) { this.tComboSub.setText(`${this.combo ? 'combo ' + this.combo + '   \u00B7   ' : ''}score ${this.score}`); this.tScore.setText(''); }
+    else { this.tComboSub.setText(this.combo ? `combo ${this.combo}` : ''); this.tScore.setText(`score ${this.score}`); }
 
     // combo-to-finale meter under the score
-    const mx = LY.meterX, my = LY.meterY, mw = LY.meterW;
+    const mw = LY.meterW, mx = LY.meterX, my = LY.meterY, m2x = MOBILE ? CX + 10 : mx, m2y = MOBILE ? my : my + 12;
     h.lineStyle(1, COL.grey, 1).strokeRect(mx, my, mw, 5);
     h.fillStyle(this.finale >= FINALE_NEEDED ? COL.redHi : COL.red, 1).fillRect(mx, my, mw * (this.finale / FINALE_NEEDED), 5);
     // ink gauge
-    h.lineStyle(1, COL.grey, 1).strokeRect(mx, my + 12, mw, 5);
-    h.fillStyle(this.smudgeT > 0 ? COL.red : COL.ink, 0.8).fillRect(mx, my + 12, mw * Math.min(1, this.gauge / 100), 5);
+    h.lineStyle(1, COL.grey, 1).strokeRect(m2x, m2y, mw, 5);
+    h.fillStyle(this.smudgeT > 0 ? COL.red : COL.ink, 0.8).fillRect(m2x, m2y, mw * Math.min(1, this.gauge / 100), 5);
     if (this.shipId) { /* labels via small static texts below */ }
 
     // upgrade list
-    const list = UPGRADES.filter((u) => this.upg(u.id)).map((u) => u.title.toLowerCase() + (this.upg(u.id) > 1 ? ' x' + this.upg(u.id) : '')).join('\n');
+    const list = UPGRADES.filter((u) => this.upg(u.id)).map((u) => u.title.toLowerCase() + (this.upg(u.id) > 1 ? ' x' + this.upg(u.id) : '')).join(MOBILE ? '  \u00B7  ' : '\n');
     if (list !== this.lastUpg) { this.lastUpg = list; this.tUpg.setText(list); }
 
     // spell slots
@@ -1179,7 +1191,7 @@ export class GameScene extends Phaser.Scene {
       this.slotLabels[i].setColor(note);
     });
     for (let i = 0; i < MAX_CHARGES; i++) { // charge pips
-      const x = MOBILE ? 18 + i * 14 : CX - (slots.length * 62) / 2 - 24 - i * 14, y = MOBILE ? LY.slotY - 40 : LY.slotY;
+      const x = MOBILE ? CX + (i - 1) * 16 : CX - (slots.length * 62) / 2 - 24 - i * 14, y = MOBILE ? PLAY_B - 16 : LY.slotY;
       if (i < this.charges) h.fillStyle(COL.red, 1).fillRect(x - 4, y - 4, 8, 8); else h.lineStyle(1, COL.grey, 1).strokeRect(x - 4, y - 4, 8, 8);
     }
     // smudge warning line
