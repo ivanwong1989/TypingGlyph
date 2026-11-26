@@ -12,12 +12,19 @@ function detectMobile(): boolean {
 }
 export const MOBILE = detectMobile();
 
+// On phones the logical height follows the real visible area, so the game fills the screen edge to edge.
+function phoneHeight(): number {
+  const el = document.getElementById('game');
+  const vw = el?.clientWidth || window.innerWidth || 390;
+  const vh = el?.clientHeight || window.innerHeight || 844;
+  return Math.round(Math.min(1120, Math.max(820, 480 * (vh / vw))));
+}
 export const W = MOBILE ? 480 : 1280;
-export const H = MOBILE ? 1040 : 720;
+export const H = MOBILE ? phoneHeight() : 720;
 export const CX = W / 2;
-export const CY = MOBILE ? 500 : 370;
 export const KB_H = MOBILE ? 274 : 0; // bottom strip reserved for spell buttons + keyboard
 export const PLAY_B = H - KB_H;       // bottom edge of the playfield
+export const CY = MOBILE ? Math.round(196 + (PLAY_B - 196) * 0.52) : 370;
 
 // Layout numbers that differ between desktop and phone.
 export const LY = MOBILE ? {
@@ -25,7 +32,7 @@ export const LY = MOBILE ? {
   chipFont: 16, chipSubFont: 13, chipH: 52,
   comboX: W - 58, comboFont: 34, comboY: 26, comboSubY: 52, scoreY: 72,
   meterX: CX - 110, meterY: 136, meterW: 220,
-  bossHpY: 158, hintY: 178, bossBodyY: 272, bossWordY: 362, bossHint: 14,
+  bossHpY: 158, hintY: 178, bossBodyY: 262, bossWordY: 346, bossHint: 14,
   labelMin: 196, labelPad: 60, bannerY: 330, bannerFont: 44, subY: 376, subFont: 18,
   upgX: 10, upgY: 190, inset: 70, introScale: 1.7,
   slotSpacing: 66, slotSize: 50, slotY: PLAY_B + 34, slotLabelDy: 34,

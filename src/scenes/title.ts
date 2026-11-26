@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, MOBILE, WPM_LEVELS, WPM_NAMES, INK_MULT } from '../config';
+import { W, H, MOBILE, WPM_LEVELS, WPM_NAMES, INK_MULT } from '../config';
 import { COL, CSS, FONT_C, Btn, applySettings, button, drawBackdrop, fillPts, regPoly, strokePts, txt } from '../style';
 import { save, SHIPS } from '../save';
 import { parseWords, currentWordSet } from '../words';
@@ -98,7 +98,7 @@ export class TitleScene extends Phaser.Scene {
     const mult = txt(this, cx, 324, '', 13, CSS.red, 0.5, 0.5, FONT_C).setDepth(3);
     const diffBtns: Btn[] = WPM_LEVELS.map((wpm, i) => button(this, 20 + 52 + i * 112, 262, 104, 64, `${wpm}\n${WPM_NAMES[i]}`, () => { this.diff = i; save.setDiff(i); audio.ensure(); refresh(); }, 16));
     const info = txt(this, cx, 560, '', 14, CSS.mid).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
-    const status = txt(this, cx, 800, '', 14, CSS.red).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
+    const status = txt(this, cx, Math.min(800, H - 130), '', 14, CSS.red).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
 
     button(this, cx, 410, 300, 84, 'PLAY', () => { audio.ensure(); this.scene.start('Game'); }, 34, true);
     const shipB = button(this, cx, 500, 300, 50, '', () => {
@@ -122,7 +122,7 @@ export class TitleScene extends Phaser.Scene {
     }, 15);
     button(this, 20 + 105, 706, 210, 52, 'NOTEBOOK', () => this.scene.start('Notebook'), 17);
     button(this, W - 20 - 105, 706, 210, 52, 'SETTINGS', () => this.scene.start('Settings'), 17);
-    txt(this, cx, 880, 'Tap the letters to type the word under an enemy.\nTap a spell button to cast it. Tap TAB to switch target.', 13, CSS.grey).setDepth(3).setAlign('center');
+    txt(this, cx, Math.min(880, H - 70), 'Tap the letters to type the word under an enemy.\nTap a spell button to cast it. Tap TAB to switch target.', 13, CSS.grey).setDepth(3).setAlign('center');
 
     const refresh = () => {
       inkT.setText('ink ' + save.getInk());

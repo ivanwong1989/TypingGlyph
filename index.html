@@ -3,18 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#e6dcc2" />
+    <meta name="theme-color" content="#d8d7cc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>TypingGlyph</title>
     <style>
-      html, body { margin: 0; height: 100%; height: 100dvh; background: #e6dcc2; overflow: hidden; overscroll-behavior: none; }
-      #game { width: 100vw; height: 100vh; height: 100dvh; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-      #rotate { display: none; position: fixed; inset: 0; z-index: 10; background: #e6dcc2; color: #3a3a37; font: 20px 'Segoe UI', Arial, sans-serif; text-align: center; align-items: center; justify-content: center; padding: 24px; }
+      html { height: 100%; height: -webkit-fill-available; }
+      html, body { margin: 0; background: #d8d7cc; overflow: hidden; overscroll-behavior: none; }
+      body { position: fixed; inset: 0; }
+      /* The wrapper keeps clear of the notch and home bar; the game fills whatever is left */
+      #wrap { position: absolute; inset: 0; box-sizing: border-box; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+      #game { width: 100%; height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      #rotate { display: none; position: fixed; inset: 0; z-index: 10; background: #d8d7cc; color: #3a3a37; font: 20px 'Segoe UI', Arial, sans-serif; text-align: center; align-items: center; justify-content: center; padding: 24px; }
       /* Phones held sideways: ask for portrait */
       @media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) { #rotate { display: flex; } }
     </style>
   </head>
   <body>
-    <div id="game"></div>
+    <div id="wrap"><div id="game"></div></div>
     <div id="rotate">Please turn your phone upright to play TypingGlyph.</div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -197,8 +197,8 @@ export class GameScene extends Phaser.Scene {
     this.tUpg = txt(this, LY.upgX, LY.upgY, '', MOBILE ? 12 : 14, CSS.grey, 0, 0, FONT_C).setDepth(20).setLineSpacing(4);
 
     const slots = this.slotDefs();
-    this.slotLabels = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY + LY.slotLabelDy, (MOBILE ? '' : '!') + s.word, MOBILE ? 10 : 11, CSS.grey, 0.5, 0.5, FONT_C).setDepth(20));
-    this.slotKeys = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY, s.word[0].toUpperCase(), MOBILE ? 22 : 24, CSS.grey, 0.5, 0.5, FONT_C).setDepth(21));
+    this.slotLabels = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY + LY.slotLabelDy, MOBILE ? '' : '!' + s.word, 11, CSS.grey, 0.5, 0.5, FONT_C).setDepth(20));
+    this.slotKeys = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY, MOBILE ? s.word : s.word[0].toUpperCase(), MOBILE ? 13 : 24, CSS.grey, 0.5, 0.5, FONT_C).setDepth(21));
 
     this.previewTexts = [0, 1, 2].map(() => txt(this, 0, 0, '', 12, CSS.grey, 0.5, 0.5).setDepth(9).setVisible(false));
     const kb = this.input.keyboard!;
@@ -640,7 +640,8 @@ export class GameScene extends Phaser.Scene {
 
   private buildPick() {
     this.pickObjs.forEach((o) => o.destroy()); this.pickObjs = []; this.pickInk = [];
-    const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, 0.93).setDepth(40);
+    const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, MOBILE ? 1 : 0.93).setDepth(40);
+    const mch = Math.min(190, Math.floor((PLAY_B - 52 - 120 - 20) / 3));
     const t1 = txt(this, CX, MOBILE ? 60 : 182, 'CHOOSE AN UPGRADE', MOBILE ? 28 : 36, CSS.ink, 0.5, 0.5, FONT_C).setDepth(41);
     const t2 = txt(this, CX, MOBILE ? 100 : 192, MOBILE ? 'type the word, or tap a card' : 'type the word on a card' + (this.rerollLeft ? '      !redraw to shuffle (once)' : ''), MOBILE ? 15 : 18, CSS.mid).setDepth(41);
     this.pickObjs.push(bg, t1, t2);
@@ -652,17 +653,17 @@ export class GameScene extends Phaser.Scene {
       this.pickObjs.push(rb, rt, rg);
     }
     this.cards.forEach((u, i) => {
-      const cw = MOBILE ? W - 40 : 300, ch = MOBILE ? 190 : 270;
-      const x = MOBILE ? CX : CX + (i - 1) * 350; const y = MOBILE ? 130 + i * 200 : 250;
+      const cw = MOBILE ? W - 40 : 300, ch = MOBILE ? mch : 270;
+      const x = MOBILE ? CX : CX + (i - 1) * 350; const y = MOBILE ? 120 + i * (mch + 10) : 250;
       const g = this.add.graphics().setDepth(41);
       g.fillStyle(COL.white, 0.9).fillRect(x - cw / 2, y, cw, ch);
       g.lineStyle(u.rare ? 2 : 1.2, u.rare ? COL.red : COL.grey, 1).strokeRect(x - cw / 2, y, cw, ch);
       const own = this.upg(u.id);
-      const title = txt(this, x, y + (MOBILE ? 28 : 46), u.title, MOBILE ? 24 : 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
-      const tag = txt(this, x, y + (MOBILE ? 52 : 78), u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 12, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
-      const desc = txt(this, x, y + (MOBILE ? 92 : 140), u.desc, MOBILE ? 15 : 17, CSS.mid).setDepth(42).setWordWrapWidth(cw - 50).setAlign('center');
+      const title = txt(this, x, y + (MOBILE ? mch * 0.17 : 46), u.title, MOBILE ? 24 : 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
+      const tag = txt(this, x, y + (MOBILE ? mch * 0.32 : 78), u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 12, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
+      const desc = txt(this, x, y + (MOBILE ? mch * 0.52 : 140), u.desc, MOBILE ? 15 : 17, CSS.mid).setDepth(42).setWordWrapWidth(cw - 50).setAlign('center');
       const kb = this.add.graphics().setDepth(42);
-      const ky = y + (MOBILE ? 144 : 205); const kh = MOBILE ? 34 : 42;
+      const ky = y + (MOBILE ? mch - 44 : 205); const kh = MOBILE ? 34 : 42;
       kb.lineStyle(1, COL.red, 1).strokeRect(x - 100, ky, 200, kh);
       const kw = txt(this, x, ky + kh / 2, u.word, MOBILE ? 22 : 26, CSS.grey, 0.5, 0.5).setDepth(43);
       const ki = txt(this, x - kw.width / 2, ky + kh / 2, '', MOBILE ? 22 : 26, CSS.red, 0, 0.5).setDepth(44);
