@@ -641,15 +641,16 @@ export class GameScene extends Phaser.Scene {
   private buildPick() {
     this.pickObjs.forEach((o) => o.destroy()); this.pickObjs = []; this.pickInk = [];
     const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, MOBILE ? 1 : 0.93).setDepth(40);
-    const mch = Math.min(190, Math.floor((PLAY_B - 52 - 120 - 20) / 3));
+    const pickB = MOBILE ? H - 196 : PLAY_B; // the spell row is hidden here, so cards may use that space
+    const mch = Math.min(200, Math.floor((pickB - 52 - 120 - 20) / 3));
     const t1 = txt(this, CX, MOBILE ? 60 : 182, 'CHOOSE AN UPGRADE', MOBILE ? 28 : 36, CSS.ink, 0.5, 0.5, FONT_C).setDepth(41);
     const t2 = txt(this, CX, MOBILE ? 100 : 192, MOBILE ? 'type the word, or tap a card' : 'type the word on a card' + (this.rerollLeft ? '      !redraw to shuffle (once)' : ''), MOBILE ? 15 : 18, CSS.mid).setDepth(41);
     this.pickObjs.push(bg, t1, t2);
     if (MOBILE && this.rerollLeft) {
-      const rb = this.add.zone(CX, PLAY_B - 24, 200, 40).setDepth(46).setInteractive();
+      const rb = this.add.zone(CX, pickB - 24, 200, 40).setDepth(46).setInteractive();
       rb.on('pointerdown', () => this.doReroll());
-      const rt = txt(this, CX, PLAY_B - 24, 'shuffle cards (1)', 16, CSS.red, 0.5, 0.5, FONT_C).setDepth(46);
-      const rg = this.add.graphics().setDepth(46); rg.lineStyle(1, COL.red, 1).strokeRect(CX - 100, PLAY_B - 44, 200, 40);
+      const rt = txt(this, CX, pickB - 24, 'shuffle cards (1)', 16, CSS.red, 0.5, 0.5, FONT_C).setDepth(46);
+      const rg = this.add.graphics().setDepth(46); rg.lineStyle(1, COL.red, 1).strokeRect(CX - 100, pickB - 44, 200, 40);
       this.pickObjs.push(rb, rt, rg);
     }
     this.cards.forEach((u, i) => {
@@ -659,9 +660,9 @@ export class GameScene extends Phaser.Scene {
       g.fillStyle(COL.white, 0.9).fillRect(x - cw / 2, y, cw, ch);
       g.lineStyle(u.rare ? 2 : 1.2, u.rare ? COL.red : COL.grey, 1).strokeRect(x - cw / 2, y, cw, ch);
       const own = this.upg(u.id);
-      const title = txt(this, x, y + (MOBILE ? mch * 0.17 : 46), u.title, MOBILE ? 24 : 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
-      const tag = txt(this, x, y + (MOBILE ? mch * 0.32 : 78), u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 12, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
-      const desc = txt(this, x, y + (MOBILE ? mch * 0.52 : 140), u.desc, MOBILE ? 15 : 17, CSS.mid).setDepth(42).setWordWrapWidth(cw - 50).setAlign('center');
+      const title = txt(this, x, y + (MOBILE ? mch * 0.15 : 46), u.title, MOBILE ? 24 : 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
+      const tag = txt(this, x, y + (MOBILE ? mch * 0.15 + 28 : 78), u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 12, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
+      const desc = txt(this, x, y + (MOBILE ? mch * 0.5 + 8 : 140), u.desc, MOBILE ? 15 : 17, CSS.mid).setDepth(42).setWordWrapWidth(cw - 50).setAlign('center');
       const kb = this.add.graphics().setDepth(42);
       const ky = y + (MOBILE ? mch - 44 : 205); const kh = MOBILE ? 34 : 42;
       kb.lineStyle(1, COL.red, 1).strokeRect(x - 100, ky, 200, kh);
