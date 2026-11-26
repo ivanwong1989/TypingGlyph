@@ -59,3 +59,5 @@ Opening the game on a phone or touch device switches to mobile mode automaticall
 - Same art, music and content as desktop. Hold the phone upright.
 
 Troubleshooting touch input on a phone: open the game with `?debug=1` to show a small log of every key the on-screen keyboard receives and what the game did with it.
+
+Targeting rule: an enemy's word is only drawn while the enemy itself is on screen (and, on phones, below the HUD), and only those enemies can be locked. `npm test` checks this rule.

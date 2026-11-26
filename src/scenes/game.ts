@@ -12,6 +12,7 @@ import { UPGRADES, Upgrade, drawCards } from '../upgrades';
 import type { RunSummary } from './summary';
 import { OnScreenKeyboard } from '../keyboard';
 import { DEBUG, debugLog } from '../debug';
+import { isVisible, targetViews } from '../targeting';
 
 type Kind = 'drifter' | 'dasher' | 'splitter' | 'shielded' | 'child' | 'boss' | 'scrambler' | 'inker' | 'marker';
 interface Plan { kind: Kind; word: string; x: number; y: number; cost: number }
@@ -304,9 +305,7 @@ export class GameScene extends Phaser.Scene {
     const k = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
     if (this.mode === 'pick') { this.handlePick(ev.key.length === 1 ? ev.key.toLowerCase() : ev.key); return; }
     if (this.mode === 'bossintro') return;
-    const views = this.enemies
-      .filter((e) => e.x > -10 && e.x < W + 10 && e.y > -10 && e.y < H + 10)
-      .map((e) => ({ id: e.id, word: e.word, distSq: (e.x - CX) ** 2 + (e.y - CY) ** 2 }));
+    const views = targetViews(this.enemies, { W, H, mobile: MOBILE }, CX, CY);
     const lw0 = DEBUG ? this.enemies.find((x) => x.id === this.engine.lockedId) : undefined;
     const exp0 = lw0 ? lw0.word[this.engine.progress] : '-';
     const evs = this.engine.key(k, views, this.time.now);
@@ -1047,6 +1046,10 @@ export class GameScene extends Phaser.Scene {
         break;
       case 'boss': break;
     }
+
+    // A word is shown only while its enemy is on screen, so every word you can read can also be typed.
+    if (e.kind !== 'boss' && !isVisible(e.x, e.y, { W, H, mobile: MOBILE })) { e.label.setVisible(false); e.ink.setVisible(false); return; }
+    e.label.setVisible(true); e.ink.setVisible(true);
 
     // word in a thin box above (or below near the top edge)
     const locked = this.engine.lockedId === e.id;
