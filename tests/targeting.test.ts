@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TypingEngine } from '../src/typing.ts';
 import type { TypingEvent } from '../src/typing.ts';
-import { isVisible, targetViews } from '../src/targeting.ts';
+import { isVisible, targetViews, PHONE_TOP } from '../src/targeting.ts';
 
 const PORTRAIT = { W: 480, H: 1040, mobile: true };
 const DESKTOP = { W: 1280, H: 720, mobile: false };
@@ -39,12 +39,19 @@ test('every position where a word is shown is typable (portrait and desktop)', (
 });
 
 test('enemies still off-screen (or under the phone HUD) are neither shown nor typable', () => {
-  const hidden: [typeof PORTRAIT, number, number][] = [[PORTRAIT, 240, -50], [PORTRAIT, 240, 60], [PORTRAIT, -40, 400], [PORTRAIT, 500, 400], [PORTRAIT, 479, 400], [DESKTOP, -30, 300], [DESKTOP, 1300, 300], [DESKTOP, 640, -40]];
+  const hidden: [typeof PORTRAIT, number, number][] = [[PORTRAIT, 240, -50], [PORTRAIT, 240, 60], [PORTRAIT, 240, 148], [PORTRAIT, -40, 400], [PORTRAIT, 500, 400], [PORTRAIT, 479, 400], [DESKTOP, -30, 300], [DESKTOP, 1300, 300], [DESKTOP, 640, -40]];
   for (const [layout, x, y] of hidden) {
     assert.equal(isVisible(x, y, layout), false, `${x},${y} should be hidden`);
     const ev = typeWord('a', [{ id: 3, word: 'ant', x, y }], layout);
     assert.equal(ev.some((e) => e.t === 'lock'), false);
   }
+});
+
+test('portrait: the top edge behaves like the sides (visible the moment it crosses the HUD line)', () => {
+  assert.equal(isVisible(240, PHONE_TOP - 1, PORTRAIT), false);
+  assert.equal(isVisible(240, PHONE_TOP + 1, PORTRAIT), true);
+  assert.equal(isVisible(7, 400, PORTRAIT), false);
+  assert.equal(isVisible(9, 400, PORTRAIT), true);
 });
 
 test('boss words are always targetable', () => {

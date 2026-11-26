@@ -12,7 +12,7 @@ import { UPGRADES, Upgrade, drawCards } from '../upgrades';
 import type { RunSummary } from './summary';
 import { OnScreenKeyboard } from '../keyboard';
 import { DEBUG, debugLog } from '../debug';
-import { isVisible, targetViews } from '../targeting';
+import { isVisible, targetViews, PHONE_TOP } from '../targeting';
 
 type Kind = 'drifter' | 'dasher' | 'splitter' | 'shielded' | 'child' | 'boss' | 'scrambler' | 'inker' | 'marker';
 interface Plan { kind: Kind; word: string; x: number; y: number; cost: number }
@@ -547,7 +547,7 @@ export class GameScene extends Phaser.Scene {
     else { const roll = Math.random(); side = roll < 0.3 ? 0 : roll < 0.58 ? 1 : roll < 0.86 ? 2 : 3; }
     if (MOBILE && side === 3) side = 0; // the bottom is the keyboard
     let x: number, y: number;
-    if (side === 0) { x = xm + Math.random() * (W - 2 * xm); y = -m; }
+    if (side === 0) { x = xm + Math.random() * (W - 2 * xm); y = (MOBILE ? PHONE_TOP : 0) - m; }
     else if (side === 1) { x = -m; y = ymin + Math.random() * (PLAY_B - ymin - 180); }
     else if (side === 2) { x = W + m; y = ymin + Math.random() * (PLAY_B - ymin - 180); }
     else { x = xm + Math.random() * (W - 2 * xm); y = H + m; }
@@ -1006,6 +1006,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawEnemy(g: Phaser.GameObjects.Graphics, e: Enemy, t: number, ox: number, oy: number) {
+    // Nothing is drawn (body or word) until the enemy crosses into the playfield.
+    if (e.kind !== 'boss' && !isVisible(e.x, e.y, { W, H, mobile: MOBILE })) { e.label.setVisible(false); e.ink.setVisible(false); return; }
     const { x, y } = e;
     switch (e.kind) {
       case 'drifter':

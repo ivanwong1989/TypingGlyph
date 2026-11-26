@@ -1,10 +1,13 @@
 // Which enemies can the player see and target? One rule, used for BOTH drawing the word
 // and accepting key presses, so a word you can read is always a word you can type.
+// On phones the playfield starts just below the HUD, so the top edge behaves like the sides.
+export const PHONE_TOP = 150;
+
 export interface Layout { W: number; H: number; mobile: boolean }
 
 export function isVisible(x: number, y: number, l: Layout): boolean {
   const side = l.mobile ? 8 : -10;   // phones: the body must be inside the screen sides
-  const top = l.mobile ? 130 : -10;  // phones: below the HUD rows, not hidden underneath them
+  const top = l.mobile ? PHONE_TOP : -10; // phones: the HUD bottom edge is the top of the playfield
   return x > side && x < l.W - side && y > top && y < l.H + 10;
 }
 
