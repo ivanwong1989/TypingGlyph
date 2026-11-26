@@ -16,6 +16,7 @@ const game = new Phaser.Game({
   backgroundColor: '#f3ead3',
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   render: { antialias: true },
+  input: { activePointers: 4 },
   scene: [TitleScene, NotebookScene, SettingsScene, GameScene, SummaryScene],
 });
 

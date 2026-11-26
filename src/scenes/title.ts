@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import { W, WPM_LEVELS, WPM_NAMES, INK_MULT } from '../config';
-import { COL, CSS, FONT_C, applySettings, drawBackdrop, fillPts, regPoly, strokePts, txt } from '../style';
+import { W, MOBILE, WPM_LEVELS, WPM_NAMES, INK_MULT } from '../config';
+import { COL, CSS, FONT_C, Btn, applySettings, button, drawBackdrop, fillPts, regPoly, strokePts, txt } from '../style';
 import { save, SHIPS } from '../save';
 import { parseWords, currentWordSet } from '../words';
 import { THEMES } from '../themes';
@@ -31,6 +31,7 @@ export class TitleScene extends Phaser.Scene {
     this.labelObjs = [];
     drawBackdrop(this);
     this.diff = save.getDiff();
+    if (MOBILE) { this.createMobile(); return; }
     this.g = this.add.graphics().setDepth(2);
 
     txt(this, W / 2, 120, 'TYPINGGLYPH', 92, CSS.ink, 0.5, 0.5, FONT_C).setDepth(3);
@@ -87,6 +88,56 @@ export class TitleScene extends Phaser.Scene {
     this.refresh();
   }
 
+  /** Phone layout: everything is a tappable button, nothing needs a keyboard. */
+  private createMobile() {
+    const cx = W / 2;
+    txt(this, cx, 100, 'TYPINGGLYPH', 46, CSS.ink, 0.5, 0.5, FONT_C).setDepth(3);
+    txt(this, cx, 140, 'every word you type is a weapon', 15, CSS.mid).setDepth(3);
+    const inkT = txt(this, W - 16, 22, '', 18, CSS.red, 1, 0.5, FONT_C).setDepth(3);
+    txt(this, cx, 214, 'DIFFICULTY  \u00B7  target typing speed (WPM)', 13, CSS.grey, 0.5, 0.5, FONT_C).setDepth(3);
+    const mult = txt(this, cx, 324, '', 13, CSS.red, 0.5, 0.5, FONT_C).setDepth(3);
+    const diffBtns: Btn[] = WPM_LEVELS.map((wpm, i) => button(this, 20 + 52 + i * 112, 262, 104, 64, `${wpm}\n${WPM_NAMES[i]}`, () => { this.diff = i; save.setDiff(i); audio.ensure(); refresh(); }, 16));
+    const info = txt(this, cx, 560, '', 14, CSS.mid).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
+    const status = txt(this, cx, 800, '', 14, CSS.red).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
+
+    button(this, cx, 410, 300, 84, 'PLAY', () => { audio.ensure(); this.scene.start('Game'); }, 34, true);
+    const shipB = button(this, cx, 500, 300, 50, '', () => {
+      const own = SHIPS.filter((x) => x === 'quill' || save.hasUnlock(x));
+      if (own.length === 1) status.setText('Other ships are unlocked in the notebook with ink and boss kills.');
+      else { save.setShip(own[(own.indexOf(save.getShip()) + 1) % own.length]); status.setText(''); refresh(); }
+    }, 18);
+    const themeB = button(this, 20 + 70, 640, 140, 48, 'words', () => {
+      const own = ['default', ...Object.keys(THEMES).filter((t) => save.hasUnlock('theme_' + t))];
+      if (own.length === 1) status.setText('Word themes are unlocked in the notebook.');
+      else { save.clearWords(); save.setTheme(own[(own.indexOf(save.getTheme()) + 1) % own.length]); status.setText(''); refresh(); }
+    }, 15);
+    const pageB = button(this, cx, 640, 140, 48, 'paper', () => {
+      const own = ['plain', ...['graph', 'napkin', 'parchment'].filter((p) => save.hasUnlock('page_' + p))];
+      if (own.length === 1) status.setText('Paper types are unlocked in the notebook.');
+      else { save.setPage(own[(own.indexOf(save.getPage()) + 1) % own.length]); this.scene.restart(); }
+    }, 15);
+    const marginB = button(this, W - 20 - 70, 640, 140, 48, 'margin', () => {
+      if (!save.getWon()) status.setText('Margin mode unlocks when you finish The Last Page.');
+      else { save.setMargin(!save.getMargin()); refresh(); }
+    }, 15);
+    button(this, 20 + 105, 706, 210, 52, 'NOTEBOOK', () => this.scene.start('Notebook'), 17);
+    button(this, W - 20 - 105, 706, 210, 52, 'SETTINGS', () => this.scene.start('Settings'), 17);
+    txt(this, cx, 880, 'Tap the letters to type the word under an enemy.\nTap a spell button to cast it. Tap TAB to switch target.', 13, CSS.grey).setDepth(3).setAlign('center');
+
+    const refresh = () => {
+      inkT.setText('ink ' + save.getInk());
+      diffBtns.forEach((b, i) => b.setActive(i === this.diff));
+      const m = save.getMargin();
+      mult.setText(`INK EARNED x${INK_MULT[this.diff]}${m ? '  x1.5 MARGIN' : ''}${this.diff >= 2 ? '  + TIER BONUS' : ''}`);
+      shipB.setLabel('ship: ' + save.getShip());
+      themeB.setLabel('words: ' + (currentWordSet().name.replace(' words', '')));
+      pageB.setLabel('paper: ' + save.getPage());
+      marginB.setLabel(m ? 'MARGIN on' : 'margin off');
+      info.setText(SHIP_INFO[save.getShip()]);
+    };
+    refresh();
+  }
+
   private setDiff(n: number) { this.diff = Phaser.Math.Clamp(n, 0, WPM_LEVELS.length - 1); save.setDiff(this.diff); this.refresh(); }
 
   private refresh() {
@@ -100,6 +151,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   update() {
+    if (MOBILE) return;
     const g = this.g; g.clear();
     const x0 = 340, x1 = 940, y = 375;
     g.lineStyle(1.5, COL.ink, 1).lineBetween(x0, y, x1, y);

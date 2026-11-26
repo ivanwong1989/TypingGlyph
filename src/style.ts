@@ -99,3 +99,24 @@ export function txt(scene: Phaser.Scene, x: number, y: number, s: string, size: 
     .setOrigin(ox, oy)
     .setResolution(Math.max(2, Math.ceil(window.devicePixelRatio || 1)));
 }
+
+export interface Btn { setLabel: (s: string) => void; setActive: (a: boolean) => void; objs: Phaser.GameObjects.GameObject[] }
+
+/** A tappable outlined button in the paper style (used by the mobile screens). */
+export function button(scene: Phaser.Scene, x: number, y: number, w: number, h: number, label: string, onTap: () => void, size = 22, accent = false, depth = 5): Btn {
+  const g = scene.add.graphics().setDepth(depth);
+  const t = txt(scene, x, y, label, size, accent ? CSS.white : CSS.ink, 0.5, 0.5, FONT_C).setDepth(depth + 1).setAlign('center');
+  const z = scene.add.zone(x, y, w, h).setDepth(depth + 2).setInteractive();
+  let active = false;
+  const draw = (down: boolean) => {
+    g.clear();
+    if (accent) g.fillStyle(COL.red, down ? 0.8 : 1).fillRect(x - w / 2, y - h / 2, w, h);
+    else if (down || active) g.fillStyle(COL.light, 0.8).fillRect(x - w / 2, y - h / 2, w, h);
+    g.lineStyle(active ? 2 : 1.2, accent || active ? COL.red : COL.ink, 1).strokeRect(x - w / 2, y - h / 2, w, h);
+  };
+  z.on('pointerdown', () => draw(true));
+  z.on('pointerout', () => draw(false));
+  z.on('pointerup', () => { draw(false); onTap(); });
+  draw(false);
+  return { setLabel: (s) => t.setText(s), setActive: (a) => { active = a; draw(false); t.setColor(accent ? CSS.white : a ? CSS.red : CSS.ink); }, objs: [g, t, z] };
+}

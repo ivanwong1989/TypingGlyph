@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {
-  W, H, CX, CY, WAVE_SECONDS, GOD, WPM_LEVELS, INK_MULT, WORD_LEN, CROSS_SECONDS, LOAD,
+  W, H, CX, CY, MOBILE, LY, PLAY_B, SPEED_SCALE, WAVE_SECONDS, GOD, WPM_LEVELS, INK_MULT, WORD_LEN, CROSS_SECONDS, LOAD,
   MAX_ALIVE, WAVE_KINDS, WAVE_INTRO, BASE_HP, MAX_CHARGES, FINALE_NEEDED,
 } from '../config';
 import { COL, CSS, FONT, FONT_C, P, SET, applySettings, drawBackdrop, ensureTextures, fillPts, regPoly, rotPts, strokePts, txt } from '../style';
@@ -10,6 +10,7 @@ import { save, ShipId } from '../save';
 import { audio, music } from '../sfx';
 import { UPGRADES, Upgrade, drawCards } from '../upgrades';
 import type { RunSummary } from './summary';
+import { OnScreenKeyboard } from '../keyboard';
 
 type Kind = 'drifter' | 'dasher' | 'splitter' | 'shielded' | 'child' | 'boss' | 'scrambler' | 'inker' | 'marker';
 interface Plan { kind: Kind; word: string; x: number; y: number; cost: number }
@@ -54,7 +55,7 @@ const STAGES: Stage[] = [
 ];
 
 const BOSS_HINT: Record<string, string> = {
-  blot: 'Its ink hides the word. Type !erase to reveal it.',
+  blot: MOBILE ? 'Its ink hides the word. Tap ERASE to reveal it.' : 'Its ink hides the word. Type !erase to reveal it.',
   pen: 'Type the CORRECT spelling, not the misspelled word shown.',
   page: 'The page folds, then tears open. Clear what spills out.',
 };
@@ -180,24 +181,24 @@ export class GameScene extends Phaser.Scene {
     this.vig = this.add.image(0, 0, 'dangerVig').setOrigin(0).setDepth(15).setAlpha(0);
     this.flashRect = this.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0).setDepth(30);
 
-    this.tTopDim = txt(this, CX, 27, '', 30, '#a9a89f', 0, 0.5, FONT_C).setDepth(19);
-    this.tTopInk = txt(this, CX, 27, '', 30, CSS.red, 0, 0.5, FONT_C).setDepth(19);
-    this.tTopPct = txt(this, CX, 62, '', 12, CSS.grey, 0.5, 0.5, FONT_C).setDepth(19);
+    this.tTopDim = txt(this, CX, LY.topY, '', LY.topFont, '#a9a89f', 0, 0.5, FONT_C).setDepth(19);
+    this.tTopInk = txt(this, CX, LY.topY, '', LY.topFont, CSS.red, 0, 0.5, FONT_C).setDepth(19);
+    this.tTopPct = txt(this, CX, LY.topY + 35, '', 12, CSS.grey, 0.5, 0.5, FONT_C).setDepth(19);
     this.chip = this.add.graphics().setDepth(31);
-    this.tStage = txt(this, 28, 24, '', 20, CSS.ink, 0, 0.5, FONT_C).setDepth(32);
-    this.tInk = txt(this, 28, 50, '', 16, CSS.red, 0, 0.5, FONT_C).setDepth(32);
-    this.tHint = txt(this, CX, 98, '', 16, CSS.red, 0.5, 0.5).setDepth(32);
-    this.tCombo = txt(this, W - 28, 30, '', 44, CSS.ink, 1, 0.5, FONT_C).setDepth(20);
-    this.tComboSub = txt(this, W - 28, 66, '', 16, CSS.mid, 1, 0.5, FONT_C).setDepth(20);
-    this.tScore = txt(this, W - 28, 90, '', 15, CSS.grey, 1, 0.5, FONT_C).setDepth(20);
-    this.tToast = txt(this, CX, CY + 110, '', 22, CSS.red).setDepth(20).setAlpha(0);
-    this.tBanner = txt(this, CX, 250, '', 60, CSS.ink, 0.5, 0.5, FONT_C).setDepth(22).setAlpha(0);
-    this.tSub = txt(this, CX, 300, '', 22, CSS.mid).setDepth(22).setAlpha(0);
-    this.tUpg = txt(this, 28, 110, '', 14, CSS.grey, 0, 0, FONT_C).setDepth(20).setLineSpacing(4);
+    this.tStage = txt(this, MOBILE ? 14 : 28, MOBILE ? 18 : 24, '', LY.chipFont, CSS.ink, 0, 0.5, FONT_C).setDepth(32);
+    this.tInk = txt(this, MOBILE ? 14 : 28, MOBILE ? 38 : 50, '', LY.chipSubFont, CSS.red, 0, 0.5, FONT_C).setDepth(32);
+    this.tHint = txt(this, CX, LY.hintY, '', LY.bossHint, CSS.red, 0.5, 0.5).setDepth(32).setWordWrapWidth(W - 30).setAlign('center');
+    this.tCombo = txt(this, LY.comboX, LY.comboY, '', LY.comboFont, CSS.ink, 1, 0.5, FONT_C).setDepth(20);
+    this.tComboSub = txt(this, LY.comboX, LY.comboSubY, '', MOBILE ? 13 : 16, CSS.mid, 1, 0.5, FONT_C).setDepth(20);
+    this.tScore = txt(this, LY.comboX, LY.scoreY, '', MOBILE ? 12 : 15, CSS.grey, 1, 0.5, FONT_C).setDepth(20);
+    this.tToast = txt(this, CX, CY + 110, '', MOBILE ? 17 : 22, CSS.red).setDepth(20).setAlpha(0).setWordWrapWidth(W - 30).setAlign('center');
+    this.tBanner = txt(this, CX, LY.bannerY, '', LY.bannerFont, CSS.ink, 0.5, 0.5, FONT_C).setDepth(22).setAlpha(0);
+    this.tSub = txt(this, CX, LY.subY, '', LY.subFont, CSS.mid).setDepth(22).setAlpha(0).setWordWrapWidth(W - 40).setAlign('center');
+    this.tUpg = txt(this, LY.upgX, LY.upgY, '', MOBILE ? 12 : 14, CSS.grey, 0, 0, FONT_C).setDepth(20).setLineSpacing(4);
 
     const slots = this.slotDefs();
-    this.slotLabels = slots.map((s, i) => txt(this, this.slotX(i, slots.length), 686, '!' + s.word, 11, CSS.grey, 0.5, 0.5, FONT_C).setDepth(20));
-    this.slotKeys = slots.map((s, i) => txt(this, this.slotX(i, slots.length), 656, s.word[0].toUpperCase(), 24, CSS.grey, 0.5, 0.5, FONT_C).setDepth(21));
+    this.slotLabels = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY + LY.slotLabelDy, (MOBILE ? '' : '!') + s.word, MOBILE ? 10 : 11, CSS.grey, 0.5, 0.5, FONT_C).setDepth(20));
+    this.slotKeys = slots.map((s, i) => txt(this, this.slotX(i, slots.length), LY.slotY, s.word[0].toUpperCase(), MOBILE ? 22 : 24, CSS.grey, 0.5, 0.5, FONT_C).setDepth(21));
 
     this.previewTexts = [0, 1, 2].map(() => txt(this, 0, 0, '', 12, CSS.grey, 0.5, 0.5).setDepth(9).setVisible(false));
     const kb = this.input.keyboard!;
@@ -205,10 +206,30 @@ export class GameScene extends Phaser.Scene {
     kb.on('keydown', this.onKey, this);
     this.events.once('shutdown', () => { kb.off('keydown', this.onKey, this); music.stop(); });
     this.buildPause();
+    if (MOBILE) this.buildTouch();
     audio.setMuted(audio.muted);
     audio.ensure();
     music.start(); music.set(0, 88);
     this.nextStage();
+  }
+
+  /** Phone controls: on-screen keyboard, tap-to-cast spell buttons, and a pause button. */
+  private buildTouch() {
+    new OnScreenKeyboard(this, (k) => this.onKey({ key: k } as KeyboardEvent));
+    const slots = this.slotDefs();
+    slots.forEach((sl, i) => {
+      const z = this.add.zone(this.slotX(i, slots.length), LY.slotY, LY.slotSpacing, LY.slotSize + 14).setDepth(46).setInteractive();
+      z.on('pointerdown', () => this.tapSpell(sl.word));
+    });
+    txt(this, W - 22, 22, 'II', 18, CSS.mid, 0.5, 0.5, FONT_C).setDepth(33);
+    const pb = this.add.zone(W - 22, 22, 48, 48).setDepth(60).setInteractive();
+    pb.on('pointerdown', () => { if (this.mode !== 'pick' && this.mode !== 'ending') this.setPaused(!this.paused); });
+  }
+
+  private tapSpell(name: string) {
+    if (this.paused || this.mode !== 'play') return;
+    audio.ensure();
+    this.castSpell(name);
   }
 
   private slotDefs() {
@@ -219,7 +240,7 @@ export class GameScene extends Phaser.Scene {
     list.push({ word: 'finale' });
     return list;
   }
-  private slotX(i: number, n: number) { return CX + (i - (n - 1) / 2) * 62; }
+  private slotX(i: number, n: number) { return CX + (i - (n - 1) / 2) * LY.slotSpacing; }
 
   // ================================================================ stages
   private stage(): Stage { return STAGES[Math.max(0, this.stageIdx)]; }
@@ -359,7 +380,7 @@ export class GameScene extends Phaser.Scene {
 
     // combo milestones: the big hit of dopamine
     for (const m of MILESTONES) if (before < m && this.combo >= m) this.milestone(m);
-    if (Math.floor(before / 10) < Math.floor(this.combo / 10) && this.combo <= 30) this.pop(W - 120, 120, 'x' + this.mult(), CSS.red, 30);
+    if (Math.floor(before / 10) < Math.floor(this.combo / 10) && this.combo <= 30) this.pop(LY.comboX - 50, 110, 'x' + this.mult(), CSS.red, 30);
     this.updateMusic();
 
     // upgrades that react to a finished word
@@ -510,13 +531,15 @@ export class GameScene extends Phaser.Scene {
     else { word = this.bank.pick(lo, hi, uf, uw); cost = word.length + 1; }
 
     const m = 50; let side: number;
+    const ymin = MOBILE ? 190 : 100; const xm = MOBILE ? 50 : 140;
     if (this.routeSide !== null && this.routeT > 0) side = this.routeSide;
     else { const roll = Math.random(); side = roll < 0.3 ? 0 : roll < 0.58 ? 1 : roll < 0.86 ? 2 : 3; }
+    if (MOBILE && side === 3) side = 0; // the bottom is the keyboard
     let x: number, y: number;
-    if (side === 0) { x = 140 + Math.random() * (W - 280); y = -m; }
-    else if (side === 1) { x = -m; y = 100 + Math.random() * (H - 280); }
-    else if (side === 2) { x = W + m; y = 100 + Math.random() * (H - 280); }
-    else { x = 140 + Math.random() * (W - 280); y = H + m; }
+    if (side === 0) { x = xm + Math.random() * (W - 2 * xm); y = -m; }
+    else if (side === 1) { x = -m; y = ymin + Math.random() * (PLAY_B - ymin - 180); }
+    else if (side === 2) { x = W + m; y = ymin + Math.random() * (PLAY_B - ymin - 180); }
+    else { x = xm + Math.random() * (W - 2 * xm); y = H + m; }
     return { kind, word, x, y, cost };
   }
 
@@ -533,7 +556,7 @@ export class GameScene extends Phaser.Scene {
     const wpm = WPM_LEVELS[this.diff];
     const cross = CROSS_SECONDS[w - 1] * Math.pow(40 / wpm, 0.4);
     const speedMul = SET.speed * (this.margin ? 1.15 : 1) * (1 + 0.025 * Math.max(0, this.stageIdx)) * (this.easeT > 0 ? 0.85 : 1);
-    this.addEnemy(plan.kind, word, plan.x, plan.y, (560 / cross) * SPEED_FACTOR[plan.kind] * speedMul);
+    this.addEnemy(plan.kind, word, plan.x, plan.y, (560 / cross) * SPEED_SCALE * SPEED_FACTOR[plan.kind] * speedMul);
     if (burst) return;
     const cps = (wpm * 5) / 60;
     const ramp = Math.min(1, 0.75 + this.stageT / 20);
@@ -566,15 +589,15 @@ export class GameScene extends Phaser.Scene {
   // ================================================================ boss
   private spawnBossWord() {
     const b = this.boss!; const pair = b.def.phases[b.phase][b.idx];
-    const e = this.addEnemy('boss', pair[1], CX, 296, 0, pair[0]);
+    const e = this.addEnemy('boss', pair[1], CX, LY.bossWordY, 0, pair[0]);
     b.wordId = e.id;
   }
 
   private bossWordDone(e: Enemy) {
     const b = this.boss; if (!b) return;
     audio.bossHit(); this.shake = Math.max(this.shake, 14); this.freeze = 0.1; b.hit = 1; b.done++;
-    this.burst(CX, 182, 24, [COL.red, COL.ink], 360);
-    this.rings.push({ x: CX, y: 182, t: 0, dur: 0.5, r: 120, col: COL.red, w: 3 });
+    this.burst(CX, LY.bossBodyY, 24, [COL.red, COL.ink], 360);
+    this.rings.push({ x: CX, y: LY.bossBodyY, t: 0, dur: 0.5, r: 120, col: COL.red, w: 3 });
     if (this.engine.lockedId === e.id) this.engine.release();
     e.label.destroy(); e.ink.destroy(); this.enemies = this.enemies.filter((x) => x !== e);
     b.wordId = null; b.idx++;
@@ -592,8 +615,8 @@ export class GameScene extends Phaser.Scene {
     audio.bossDie(); this.shake = 26; this.freeze = 0.25; this.flash('#ffffff', 0.7);
     this.score += 1000;
     for (const e of [...this.enemies]) this.kill(e, false);
-    for (let i = 0; i < 5; i++) this.rings.push({ x: CX, y: 182, t: -i * 0.1, dur: 0.9, r: 200 + i * 90, col: i % 2 ? COL.ink : COL.red, w: 3 });
-    this.burst(CX, 182, 120, [COL.red, COL.redHi, COL.ink, COL.grey], 700);
+    for (let i = 0; i < 5; i++) this.rings.push({ x: CX, y: LY.bossBodyY, t: -i * 0.1, dur: 0.9, r: 200 + i * 90, col: i % 2 ? COL.ink : COL.red, w: 3 });
+    this.burst(CX, LY.bossBodyY, 120, [COL.red, COL.redHi, COL.ink, COL.grey], 700);
     this.tBanner.setText(b.def.name.toUpperCase()).setColor(CSS.red).setAlpha(1).setScale(1.5);
     this.tSub.setText('defeated').setAlpha(1);
     this.tweens.killTweensOf(this.tBanner); this.tweens.killTweensOf(this.tSub);
@@ -610,29 +633,45 @@ export class GameScene extends Phaser.Scene {
     this.buildPick(); this.updateMusic();
   }
 
+  private doReroll() {
+    if (!this.rerollLeft) return;
+    this.rerollLeft--; this.cards = drawCards(this.stacks, this.shipId, save.getUnlocks(), this.stageIdx >= 2, false); this.buildPick();
+  }
+
   private buildPick() {
     this.pickObjs.forEach((o) => o.destroy()); this.pickObjs = []; this.pickInk = [];
     const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, 0.93).setDepth(40);
-    const t1 = txt(this, CX, 182, 'CHOOSE AN UPGRADE', 36, CSS.ink, 0.5, 0.5, FONT_C).setDepth(41);
-    const t2 = txt(this, CX, 192, 'type the word on a card' + (this.rerollLeft ? '      !redraw to shuffle (once)' : ''), 18, CSS.mid).setDepth(41);
+    const t1 = txt(this, CX, MOBILE ? 60 : 182, 'CHOOSE AN UPGRADE', MOBILE ? 28 : 36, CSS.ink, 0.5, 0.5, FONT_C).setDepth(41);
+    const t2 = txt(this, CX, MOBILE ? 100 : 192, MOBILE ? 'type the word, or tap a card' : 'type the word on a card' + (this.rerollLeft ? '      !redraw to shuffle (once)' : ''), MOBILE ? 15 : 18, CSS.mid).setDepth(41);
     this.pickObjs.push(bg, t1, t2);
+    if (MOBILE && this.rerollLeft) {
+      const rb = this.add.zone(CX, PLAY_B - 24, 200, 40).setDepth(46).setInteractive();
+      rb.on('pointerdown', () => this.doReroll());
+      const rt = txt(this, CX, PLAY_B - 24, 'shuffle cards (1)', 16, CSS.red, 0.5, 0.5, FONT_C).setDepth(46);
+      const rg = this.add.graphics().setDepth(46); rg.lineStyle(1, COL.red, 1).strokeRect(CX - 100, PLAY_B - 44, 200, 40);
+      this.pickObjs.push(rb, rt, rg);
+    }
     this.cards.forEach((u, i) => {
-      const x = CX + (i - 1) * 350; const y = 250;
+      const cw = MOBILE ? W - 40 : 300, ch = MOBILE ? 190 : 270;
+      const x = MOBILE ? CX : CX + (i - 1) * 350; const y = MOBILE ? 130 + i * 200 : 250;
       const g = this.add.graphics().setDepth(41);
-      g.fillStyle(COL.white, 0.9).fillRect(x - 150, y, 300, 270);
-      g.lineStyle(u.rare ? 2 : 1.2, u.rare ? COL.red : COL.grey, 1).strokeRect(x - 150, y, 300, 270);
+      g.fillStyle(COL.white, 0.9).fillRect(x - cw / 2, y, cw, ch);
+      g.lineStyle(u.rare ? 2 : 1.2, u.rare ? COL.red : COL.grey, 1).strokeRect(x - cw / 2, y, cw, ch);
       const own = this.upg(u.id);
-      const title = txt(this, x, y + 46, u.title, 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
-      const tag = txt(this, x, y + 78, u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 13, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
-      const desc = txt(this, x, y + 140, u.desc, 17, CSS.mid).setDepth(42).setWordWrapWidth(250).setAlign('center');
+      const title = txt(this, x, y + (MOBILE ? 28 : 46), u.title, MOBILE ? 24 : 28, CSS.ink, 0.5, 0.5, FONT_C).setDepth(42);
+      const tag = txt(this, x, y + (MOBILE ? 52 : 78), u.rare ? 'RARE' : u.ship ? 'SHIP PERK' : own ? `owned x${own}` : 'new', 12, u.rare ? CSS.red : CSS.grey, 0.5, 0.5, FONT_C).setDepth(42);
+      const desc = txt(this, x, y + (MOBILE ? 92 : 140), u.desc, MOBILE ? 15 : 17, CSS.mid).setDepth(42).setWordWrapWidth(cw - 50).setAlign('center');
       const kb = this.add.graphics().setDepth(42);
-      kb.lineStyle(1, COL.red, 1).strokeRect(x - 100, y + 205, 200, 42);
-      const kw = txt(this, x, y + 226, u.word, 26, CSS.grey, 0.5, 0.5).setDepth(43);
-      const ki = txt(this, x - kw.width / 2, y + 226, '', 26, CSS.red, 0, 0.5).setDepth(44);
+      const ky = y + (MOBILE ? 144 : 205); const kh = MOBILE ? 34 : 42;
+      kb.lineStyle(1, COL.red, 1).strokeRect(x - 100, ky, 200, kh);
+      const kw = txt(this, x, ky + kh / 2, u.word, MOBILE ? 22 : 26, CSS.grey, 0.5, 0.5).setDepth(43);
+      const ki = txt(this, x - kw.width / 2, ky + kh / 2, '', MOBILE ? 22 : 26, CSS.red, 0, 0.5).setDepth(44);
       this.pickInk.push(ki);
+      const zone = this.add.zone(x, y + ch / 2, cw, ch).setDepth(44).setInteractive();
+      zone.on('pointerdown', () => { if (this.mode === 'pick') this.choose(u); });
       const objs = [g, title, tag, desc, kb, kw, ki];
       objs.forEach((o, j) => { (o as Phaser.GameObjects.Text).setAlpha?.(0); this.tweens.add({ targets: o, alpha: 1, delay: i * 90 + j * 10, duration: 260 }); });
-      this.pickObjs.push(...objs);
+      this.pickObjs.push(...objs, zone);
     });
   }
 
@@ -712,13 +751,13 @@ export class GameScene extends Phaser.Scene {
             this.toast('The paper tears open! Everything is loose.', CSS.red); audio.bossHit(); this.shake = 22; this.flash(CSS.red, 0.3);
             for (const k of [...WAVE_KINDS[4]].sort(() => Math.random() - 0.5).slice(0, this.margin ? 6 : 5)) if (this.enemies.length < 14) this.spawn([k], 0, true);
           }
-          this.inset += ((b.fold === 1 ? 170 : 0) - this.inset) * Math.min(1, dt * 4);
+          this.inset += ((b.fold === 1 ? LY.inset : 0) - this.inset) * Math.min(1, dt * 4);
         }
         if (b.def.gimmick === 'blot') {
           b.blotT -= dt; if (b.mask > 0) b.mask -= dt;
           if (b.blotT <= 0) {
             b.blotT = this.margin ? 6 : 9; b.mask = 4.5; b.splats = Array.from({ length: 7 }, () => ({ x: CX + (Math.random() - 0.5) * 520, y: 110 + Math.random() * 190 }));
-            this.toast('The Blot spits ink! Type !erase to wipe it.', CSS.red); this.shake = Math.max(this.shake, 8); audio.bossHit();
+            this.toast(MOBILE ? 'The Blot spits ink! Tap ERASE to wipe it.' : 'The Blot spits ink! Type !erase to wipe it.', CSS.red); this.shake = Math.max(this.shake, 8); audio.bossHit();
           }
         }
       }
@@ -843,12 +882,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildPause() {
-    const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, 0.95).setDepth(50);
-    const t1 = txt(this, W / 2, 160, 'PAUSED', 60, CSS.ink, 0.5, 0.5, FONT_C).setDepth(51);
-    const t2 = txt(this, W / 2, 400,
+    const bg = this.add.rectangle(W / 2, H / 2, W, H, COL.paper, 0.95).setDepth(50).setInteractive();
+    bg.on('pointerdown', () => { if (this.paused) this.setPaused(false); });
+    const t1 = txt(this, W / 2, MOBILE ? 130 : 160, 'PAUSED', MOBILE ? 44 : 60, CSS.ink, 0.5, 0.5, FONT_C).setDepth(51);
+    const t2 = txt(this, W / 2, MOBILE ? 440 : 400,
       'Spells: type ! then the word\n\n!nova    blast short words near the ship\n!slow    half-speed enemies for 5 seconds\n!erase   remove the nearest enemy, wipe boss ink\n!ward    absorb hits (needs the Ward upgrade)\n!edit    Scribe only: rewrite every word shorter\n!echo    next word fires twice (needs the Echo unlock)\n!route   Cartographer only: choose where enemies arrive\n!finale  clear the page when the combo bar is full\n\n' +
-      'Tab = next target     Backspace twice = drop target\n\nEsc resume        M mute', 22, CSS.mid).setDepth(51).setAlign('center');
-    this.pauseObjs = [bg, t1, t2];
+      'Tab = next target     Backspace twice = drop target\n\nEsc resume        M mute', MOBILE ? 14 : 22, CSS.mid).setDepth(51).setAlign('center').setWordWrapWidth(W - 30);
+    const t3 = MOBILE ? txt(this, W / 2, 240, 'Tap the spell buttons to cast.\nTap anywhere to resume.', 18, CSS.red).setDepth(51).setAlign('center') : null;
+    this.pauseObjs = t3 ? [bg, t1, t2, t3] : [bg, t1, t2];
     this.pauseObjs.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));
   }
   private setPaused(p: boolean) {
@@ -868,7 +909,7 @@ export class GameScene extends Phaser.Scene {
     const danger = this.hp <= 2 && this.mode !== 'ending' ? (SET.reduce ? 0.3 : 0.35 + 0.35 * Math.sin(t * (this.hp <= 1 ? 7 : 4))) : 0;
     this.vig.setAlpha(Math.max(0, danger));
 
-    if (this.mode === 'bossintro' && this.boss) { g.fillStyle(COL.paper, 0.94).fillRect(-60, -60, W + 120, H + 120); this.drawBossBody(g, t, CX, CY - 40, 2.4); }
+    if (this.mode === 'bossintro' && this.boss) { g.fillStyle(COL.paper, 0.94).fillRect(-60, -60, W + 120, H + 120); this.drawBossBody(g, t, CX, CY - 40, LY.introScale); }
     else this.drawBossBody(g, t);
     for (const e of this.enemies) this.drawEnemy(g, e, t, ox, oy);
     this.drawInset(g); this.drawPreview(g);
@@ -893,7 +934,7 @@ export class GameScene extends Phaser.Scene {
 
   private drawInset(g: Phaser.GameObjects.Graphics) {
     if (this.inset < 1) return;
-    const a = Math.min(0.55, (this.inset / 170) * 0.55); const i = this.inset;
+    const a = Math.min(0.55, (this.inset / LY.inset) * 0.55); const i = this.inset;
     g.fillStyle(COL.ink, a);
     g.fillRect(-80, -80, W + 160, i + 80); g.fillRect(-80, H - i, W + 160, i + 80);
     g.fillRect(-80, -80, i + 80, H + 160); g.fillRect(W - i, -80, i + 80, H + 160);
@@ -906,7 +947,7 @@ export class GameScene extends Phaser.Scene {
     this.previewTexts.forEach((tx, i) => {
       const p = this.queue[i];
       if (!on || !p) { tx.setVisible(false); return; }
-      const px = Phaser.Math.Clamp(p.x, 40, W - 40), py = Phaser.Math.Clamp(p.y, 100, H - 110);
+      const px = Phaser.Math.Clamp(p.x, 40, W - 40), py = Phaser.Math.Clamp(p.y, LY.labelMin, PLAY_B - 110);
       g.lineStyle(1.2, COL.grey, 0.9 - i * 0.2).strokeCircle(px, py, 9 - i);
       strokePts(g, [{ x: px, y: py }, { x: px + (CX - px) * 0.08, y: py + (CY - py) * 0.08 }], COL.grey, 1.2, 0.7);
       tx.setText(p.kind + ': ' + p.word).setPosition(px, py + (py < CY ? 20 : -20)).setVisible(true).setAlpha(0.9 - i * 0.25);
@@ -1008,8 +1049,8 @@ export class GameScene extends Phaser.Scene {
     }
     if (e.label.text !== want) e.label.setText(want);
     const lw = e.label.width;
-    let ly = boss ? y : y - e.r - 24; if (ly < 112) ly = y + e.r + 24;
-    ly = Phaser.Math.Clamp(ly, 112, H - 130);
+    let ly = boss ? y : y - e.r - 24; if (ly < LY.labelMin) ly = y + e.r + 24;
+    ly = Phaser.Math.Clamp(ly, LY.labelMin, PLAY_B - LY.labelPad);
     const lx = Phaser.Math.Clamp(x - lw / 2, SET.cb ? 40 : 14, W - lw - 14);
     const bw = lw + 18, bh = boss ? 44 : 34;
     g.fillStyle(COL.paper, 0.85).fillRect(lx - 9, ly - bh / 2, bw, bh);
@@ -1030,7 +1071,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private drawBossBody(g: Phaser.GameObjects.Graphics, t: number, ocx = CX, ocy = 182, big = 1) {
+  private drawBossBody(g: Phaser.GameObjects.Graphics, t: number, ocx = CX, ocy = LY.bossBodyY, big = 1) {
     const b = this.boss; if (!b || this.mode === 'ending') return;
     const rings = b.def.phases.length - b.phase + 1;
     const sc = (1 + Math.max(0, b.hit) * 0.25) * big; const cx = ocx, cy = ocy;
@@ -1073,14 +1114,14 @@ export class GameScene extends Phaser.Scene {
     this.tTopDim.setX(CX - w / 2); this.tTopInk.setX(CX - w / 2);
     this.tTopInk.setColor(this.typoFlash > 0 ? CSS.redHi : CSS.red);
     // a thin rule under the word that fills red as you type it
-    { const lx0 = CX - 190; h.lineStyle(1, COL.light, 1).lineBetween(lx0, 50, lx0 + 380, 50);
+    { const lx0 = CX - LY.ruleW / 2; h.lineStyle(1, COL.light, 1).lineBetween(lx0, LY.ruleY, lx0 + LY.ruleW, LY.ruleY);
       const frac = this.engine.lockedId !== null && this.engine.spell === null ? (() => { const e = this.enemies.find((x) => x.id === this.engine.lockedId); return e ? this.engine.progress / e.word.length : 0; })() : 0;
-      if (frac > 0) h.lineStyle(2, COL.red, 1).lineBetween(lx0, 50, lx0 + 380 * frac, 50); }
+      if (frac > 0) h.lineStyle(2, COL.red, 1).lineBetween(lx0, LY.ruleY, lx0 + LY.ruleW * frac, LY.ruleY); }
     this.tTopPct.setText(pct);
 
     // boss health: segmented bar under the top bar
     if (this.boss) {
-      const b = this.boss; const bw = 360, x0 = CX - bw / 2, y0 = 76;
+      const b = this.boss; const bw = MOBILE ? 300 : 360, x0 = CX - bw / 2, y0 = LY.bossHpY;
       h.lineStyle(1, COL.grey, 1).strokeRect(x0, y0, bw, 5);
       h.fillStyle(COL.red, 1).fillRect(x0, y0, bw * (1 - b.done / b.total), 5);
       let acc = 0; for (const ph of b.def.phases.slice(0, -1)) { acc += ph.length; h.lineStyle(1, COL.paper, 1).lineBetween(x0 + (acc / b.total) * bw, y0, x0 + (acc / b.total) * bw, y0 + 5); }
@@ -1088,26 +1129,26 @@ export class GameScene extends Phaser.Scene {
 
     const s = this.stage();
     const left = Math.floor(this.elapsed);
-    const hint = this.boss && this.mode !== 'bossintro' ? (this.boss.def.gimmick === 'blot' && this.boss.mask > 0 ? 'Ink! Type !erase to reveal the word' : BOSS_HINT[this.boss.def.gimmick]) : '';
+    const hint = this.boss && this.mode !== 'bossintro' ? (this.boss.def.gimmick === 'blot' && this.boss.mask > 0 ? (MOBILE ? 'Ink! Tap ERASE to reveal the word' : 'Ink! Type !erase to reveal the word') : BOSS_HINT[this.boss.def.gimmick]) : '';
     this.tHint.setText(hint);
     this.tStage.setText(`${s.t === 'wave' ? 'PAGE ' + s.w + ' / 5' : 'BOSS'}${this.margin ? '  \u00B7 MARGIN' : ''}      ${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`);
     this.tInk.setText('ink +' + this.calcInk());
     this.chip.clear();
     const cw = Math.max(this.tStage.width, this.tInk.width) + 24;
-    this.chip.fillStyle(COL.paper, 0.96).fillRect(14, 8, cw, 62);
-    this.chip.lineStyle(1, COL.light, 1).strokeRect(14, 8, cw, 62);
+    this.chip.fillStyle(COL.paper, 0.96).fillRect(MOBILE ? 6 : 14, 8, cw, LY.chipH);
+    this.chip.lineStyle(1, COL.light, 1).strokeRect(MOBILE ? 6 : 14, 8, cw, LY.chipH);
     this.tCombo.setText(this.combo ? 'x' + this.mult() : '').setColor(this.mult() >= 3 ? CSS.red : CSS.ink);
     this.tCombo.setScale(1 + (this.combo ? Math.max(0, 0.15 - ((t * 1000) % 1000) / 4000) : 0));
     this.tComboSub.setText(this.combo ? `combo ${this.combo}` : '');
     this.tScore.setText(`score ${this.score}`);
 
     // combo-to-finale meter under the score
-    const mx = W - 228, my = 112;
-    h.lineStyle(1, COL.grey, 1).strokeRect(mx, my, 200, 5);
-    h.fillStyle(this.finale >= FINALE_NEEDED ? COL.redHi : COL.red, 1).fillRect(mx, my, 200 * (this.finale / FINALE_NEEDED), 5);
+    const mx = LY.meterX, my = LY.meterY, mw = LY.meterW;
+    h.lineStyle(1, COL.grey, 1).strokeRect(mx, my, mw, 5);
+    h.fillStyle(this.finale >= FINALE_NEEDED ? COL.redHi : COL.red, 1).fillRect(mx, my, mw * (this.finale / FINALE_NEEDED), 5);
     // ink gauge
-    h.lineStyle(1, COL.grey, 1).strokeRect(mx, my + 12, 200, 5);
-    h.fillStyle(this.smudgeT > 0 ? COL.red : COL.ink, 0.8).fillRect(mx, my + 12, 200 * Math.min(1, this.gauge / 100), 5);
+    h.lineStyle(1, COL.grey, 1).strokeRect(mx, my + 12, mw, 5);
+    h.fillStyle(this.smudgeT > 0 ? COL.red : COL.ink, 0.8).fillRect(mx, my + 12, mw * Math.min(1, this.gauge / 100), 5);
     if (this.shipId) { /* labels via small static texts below */ }
 
     // upgrade list
@@ -1117,7 +1158,7 @@ export class GameScene extends Phaser.Scene {
     // spell slots
     const slots = this.slotDefs();
     slots.forEach((sl, i) => {
-      const x = this.slotX(i, slots.length), y = 656, sz = 46;
+      const x = this.slotX(i, slots.length), y = LY.slotY, sz = LY.slotSize;
       let on = false; let note = CSS.grey;
       const free = this.upg('surge') > 0 && this.combo >= 20;
       if (sl.word === 'finale') {
@@ -1136,10 +1177,10 @@ export class GameScene extends Phaser.Scene {
       this.slotLabels[i].setColor(note);
     });
     for (let i = 0; i < MAX_CHARGES; i++) { // charge pips
-      const x = CX - (slots.length * 62) / 2 - 24 - i * 14, y = 656;
+      const x = MOBILE ? 18 + i * 14 : CX - (slots.length * 62) / 2 - 24 - i * 14, y = MOBILE ? LY.slotY - 40 : LY.slotY;
       if (i < this.charges) h.fillStyle(COL.red, 1).fillRect(x - 4, y - 4, 8, 8); else h.lineStyle(1, COL.grey, 1).strokeRect(x - 4, y - 4, 8, 8);
     }
     // smudge warning line
-    if (this.smudgeT > 0) h.lineStyle(2, COL.red, 0.8).lineBetween(CX - 240, 622, CX + 240, 622);
+    if (this.smudgeT > 0) h.lineStyle(2, COL.red, 0.8).lineBetween(CX - Math.min(240, W / 2 - 20), LY.slotY - 34, CX + Math.min(240, W / 2 - 20), LY.slotY - 34);
   }
 }

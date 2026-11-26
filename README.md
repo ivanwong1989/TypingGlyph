@@ -47,3 +47,13 @@ Dyslexia-friendly font, word speed 50-150%, reduce motion (no shake, flashes or 
 - `src/config.ts` tuning numbers (pacing, word lengths, speeds, load per wave)
 - `src/themes.ts` word themes, `src/words.ts` word picker and import
 - `src/save.ts` everything stored in localStorage, `src/style.ts` palette, fonts, backdrops
+
+## Mobile mode
+
+Opening the game on a phone or touch device switches to mobile mode automatically (force it with `?mobile=1`, or turn it off with `?mobile=0`). The desktop version is unchanged.
+
+- Portrait layout with an on-screen QWERTY keyboard (tab = next target, backspace works like on a keyboard), so the phone's own keyboard never opens.
+- Spells are tap buttons above the keyboard; `!route` then asks you to tap N, W, E or S.
+- Easier speed tiers (20/28/36/45 WPM), shorter words and slower enemies.
+- Everything is tappable: title, notebook (tap an item, tap again to buy), settings, upgrade cards, pause button (top right).
+- Same art, music and content as desktop. Hold the phone upright.
