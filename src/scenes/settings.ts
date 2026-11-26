@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, MOBILE } from '../config';
+import { W, H, MOBILE } from '../config';
 import { COL, CSS, FONT_C, applySettings, button, drawBackdrop, txt } from '../style';
 import { save, Settings } from '../save';
 import { audio } from '../sfx';
@@ -49,12 +49,12 @@ export class SettingsScene extends Phaser.Scene {
         z.on('pointerdown', () => { audio.ensure(); this.cur = i; change(i, 1); });
       }
     });
-    this.hint = txt(this, W / 2, MOBILE ? 720 : 560, '', MOBILE ? 14 : 17, CSS.mid).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
-    this.msg = txt(this, W / 2, MOBILE ? 780 : 612, '', 16, CSS.red).setDepth(3);
+    this.hint = txt(this, W / 2, MOBILE ? H - 190 : 560, '', MOBILE ? 14 : 17, CSS.mid).setDepth(3).setWordWrapWidth(W - 40).setAlign('center');
+    this.msg = txt(this, W / 2, MOBILE ? H - 125 : 612, '', 16, CSS.red).setDepth(3);
 
     if (MOBILE) {
       txt(this, W / 2, 150, 'tap a setting to change it', 13, CSS.grey).setDepth(3);
-      button(this, W / 2, 900, 200, 48, 'BACK', () => { save.setSettings(this.s); this.scene.start('Title'); }, 18);
+      button(this, W / 2, H - 56, 200, 44, '← BACK', () => { save.setSettings(this.s); this.scene.start('Title'); }, 18);
       return;
     }
     txt(this, W / 2, 650, 'E  export save to a file        L  import a save file', 18, CSS.ink).setDepth(3);

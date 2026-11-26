@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { W, MOBILE, WPM_LEVELS } from '../config';
+import { W, H, MOBILE, WPM_LEVELS } from '../config';
 import { COL, CSS, FONT_C, button, drawBackdrop, txt } from '../style';
 import { save } from '../save';
 import { audio } from '../sfx';
@@ -16,7 +16,8 @@ export class SummaryScene extends Phaser.Scene {
 
   create(d: RunSummary) {
     drawBackdrop(this);
-    const PW = MOBILE ? W - 30 : 660, PX = (W - PW) / 2, PY = MOBILE ? 30 : 50, PH = MOBILE ? 760 : 620;
+    const PW = MOBILE ? W - 30 : 660, PX = (W - PW) / 2, PY = MOBILE ? 30 : 50, PH = MOBILE ? Math.min(760, H - 235) : 620;
+    const RP = MOBILE ? (H < 960 ? 38 : 44) : 40; // row pitch
     const g = this.add.graphics().setDepth(2);
     g.fillStyle(COL.white, 0.9).fillRect(PX, PY, PW, PH);
     g.lineStyle(1.2, d.won ? COL.ink : COL.red, 1).strokeRect(PX, PY, PW, PH);
@@ -35,21 +36,21 @@ export class SummaryScene extends Phaser.Scene {
     ];
     const lx = PX + 40, rx = PX + PW - (MOBILE ? 56 : 60);
     rows.forEach(([k, v, best], i) => {
-      const y = PY + 175 + i * (MOBILE ? 44 : 40);
+      const y = PY + 175 + i * RP;
       txt(this, lx, y, k.toUpperCase(), MOBILE ? 12 : 15, CSS.grey, 0, 0.5, FONT_C).setDepth(3);
       txt(this, rx, y, v, MOBILE ? 18 : 22, best ? CSS.red : CSS.ink, 1, 0.5).setDepth(3);
       if (best) txt(this, rx + 6, y, 'BEST', 11, CSS.red, 0, 0.5, FONT_C).setDepth(3);
     });
-    const yb = PY + 175 + 7 * (MOBILE ? 44 : 40) + 20;
+    const yb = PY + 175 + 7 * RP + 20;
     txt(this, W / 2, yb, d.upgrades.length ? 'upgrades: ' + d.upgrades.join(', ') : 'no upgrades picked', 13, CSS.grey).setDepth(3).setWordWrapWidth(PW - 60).setAlign('center');
     if (d.newBest) txt(this, W / 2, yb + 40, 'NEW PERSONAL BEST', MOBILE ? 18 : 22, CSS.red, 0.5, 0.5, FONT_C).setDepth(3);
     txt(this, W / 2, yb + 80, `+${d.ink} ink     total ${save.getInk()}`, MOBILE ? 22 : 28, CSS.red, 0.5, 0.5, FONT_C).setDepth(3);
     if (d.marginNew) txt(this, W / 2, yb + 118, MOBILE ? 'MARGIN MODE UNLOCKED  (toggle on the title screen)' : 'MARGIN MODE UNLOCKED  (press G on the title screen)', MOBILE ? 13 : 16, CSS.red).setDepth(3);
 
     if (MOBILE) {
-      button(this, W / 2, PY + PH + 50, 300, 70, 'PLAY AGAIN', () => { audio.ensure(); this.scene.start('Game'); }, 26, true);
-      button(this, 20 + 105, PY + PH + 130, 210, 50, 'TITLE', () => this.scene.start('Title'), 16);
-      button(this, W - 20 - 105, PY + PH + 130, 210, 50, 'NOTEBOOK', () => this.scene.start('Notebook'), 16);
+      button(this, W / 2, H - 135, 300, 64, 'PLAY AGAIN', () => { audio.ensure(); this.scene.start('Game'); }, 26, true);
+      button(this, 20 + 105, H - 56, 210, 44, 'TITLE', () => this.scene.start('Title'), 16);
+      button(this, W - 20 - 105, H - 56, 210, 44, 'NOTEBOOK', () => this.scene.start('Notebook'), 16);
     } else {
       txt(this, W / 2, 695, 'Enter  new run        N  notebook        Esc  title', 20, CSS.mid).setDepth(3);
     }

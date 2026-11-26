@@ -17,7 +17,7 @@ function phoneHeight(): number {
   const el = document.getElementById('game');
   const vw = el?.clientWidth || window.innerWidth || 390;
   const vh = el?.clientHeight || window.innerHeight || 844;
-  return Math.round(Math.min(1120, Math.max(820, 480 * (vh / vw))));
+  return Math.round(Math.min(1120, Math.max(860, 480 * (vh / vw))));
 }
 export const W = MOBILE ? 480 : 1280;
 export const H = MOBILE ? phoneHeight() : 720;
